@@ -13,11 +13,11 @@ if ! [[ -d $1 ]]; then
     exit 1
 fi
 
-# Check if the provided directory is a git repository
+# Check if the provided directory is in a git repository
 git status $1 2&> /dev/null
 exit_code=$?
 if [[ $exit_code -ne 0 ]]; then
-    echo "$0: $1 is not a git repository"
+    echo "$0: $1 is not in a git repository"
     exit $exit_code
 fi
 
