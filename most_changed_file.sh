@@ -33,7 +33,7 @@ echo "The most changed files are (file path, #commits):"
 find $1 -type f -print |
     while read file; do
         echo -n "$file "
-        git log --oneline $file 2> /dev/null | wc -l
+        git log --follow --oneline $file 2> /dev/null | wc -l  # report changes made across file renames
     done |
 sort -rn -k 2 |
 head -$limit
