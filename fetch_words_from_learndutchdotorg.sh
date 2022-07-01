@@ -32,6 +32,7 @@ curl -sL $cookie_header_flag "$cookie" $1 |
             s/<td.*>\(.*\)<\/td>/\1/             # Get the word
             N                                    # Merge with the next line (the translation)
             s/\n//                               # Remove the embedded newline character
+            s/,/;/g                              # Replace comma with a semicolon, since a comma is used as a separator between a word and translation
             s/\(.*\)<td.*>\(.*\)<\/td>/\1,\2/    # Remove html tag from the second word (translation), separate with commas
 
             # Replace HTML escape characters
