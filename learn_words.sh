@@ -27,13 +27,17 @@ while [[ "Jegor" != "smart" ]]; do
     while read pair; do
         IFS=',' read word translation <<< $pair
 
+        if [[ "$word" == \#* ]]; then
+            continue
+        fi
+
         if [[ $recall ]]; then
-            notify-send -i accessories-dictionary-symbolic -u critical "How do you say" "$translation"  # critical urgency is to make sure that the popup does not disappear
-            notify-send -i accessories-dictionary-symbolic -u critical "Answer" "$word"                 # if `accessories-dictionaries-symbolic` is not found, remove this option
+            notify-send -w -i accessories-dictionary-symbolic -u critical "How do you say" "$translation"  # critical urgency is to make sure that the popup does not disappear
+            notify-send -w -i accessories-dictionary-symbolic -u critical "Answer" "$word"                 # if `accessories-dictionaries-symbolic` is not found, remove this option
         else
-            notify-send -i accessories-dictionary-symbolic -u critical "$word" "$translation"
+            notify-send -w -i accessories-dictionary-symbolic -u critical "$word" "$translation"
         fi
 
         sleep $interval
-    done < <(shuf $1)
+    done < <(shuf --random-source="/dev/urandom" $1)
 done
