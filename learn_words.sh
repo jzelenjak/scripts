@@ -1,43 +1,45 @@
 #!/bin/bash
-# Gets a word + translation from a random permutation of a.csv file and creates a notification with the word and its translation.
-# This script can be used as a background process to help with learning a foreign language.
-# When --active-recall option is specified, the translation is displayed first, and after the popup is closed, the answer is displayed.
+# Gets a word-translation pair from a random permutation of a.csv file and creates a notification with a translation, so that the user has to guess the word in the target language (in the active recall mode)
+# Lines in the .csv file starting with # are treated as learned words (which the user does not want to revise)
+# This script can be used as a background process to help with learning a foreign language
+# NB! The file has to be in a .csv format (<word>,<translation>)
 
-# Checks if the file with the words has been specified
-if [[ $# -eq 0 || ! -f $1 ]]; then
-    echo "$0: could not find the file with the words"
-    exit 2
-fi
+set -euo pipefail
+IFS=$'\n\t'
 
-# Gets the interval in minutes (default: 10 minutes)
-interval=600
-if [[ -n $2 ]]; then
-    interval=$(($2 * 60))
-fi
+umask 077
 
-# Check if the active recall mode is on
-if [[ "$3" = "--active-recall" ]]; then
-    recall=1
-fi
+usage="usage: $0 file [interval_in_minutes]"
+
+
+# Check if the file with words has been specified
+file=${1:-}
+[ -z "$file" ] && { echo -e "missing file name\n$usage" >&2; exit 2; }
+
+# Check if the specified file exists
+! [ -f "$file" ] && { echo -e "file not found\n$usage" >&2; exit 2; }
+
+
+# Get the interval in minutes (default: 10 minutes)
+interval_min=${2:-10}
+[ "$interval_min" -lt "1" ] && { echo -e "invalid interval: $interval_min\ninterval must be greater than 0" >&2; exit 2; }
+interval=$(( interval_min * 60 ))
+
 
 # Start the infinite loop until the process is not interrupted or killed
-echo "You will get a new word every $((interval / 60)) $(test $interval -eq 60 && echo minute || echo minutes)"
+echo "You will get a new word every $(( interval / 60 )) $(test $interval -eq 60 && echo minute || echo minutes)"
 
 while [[ "Jegor" != "smart" ]]; do
     while read pair; do
-        IFS=',' read word translation <<< $pair
+        IFS=',' read word translation <<< "$pair"
 
-        if [[ "$word" == \#* ]]; then
+        if [[ "$word" == \#* ]]; then  # exclude the words that have been commented out
             continue
         fi
 
-        if [[ $recall ]]; then
-            notify-send -w -i accessories-dictionary-symbolic -u critical "How do you say" "$translation"  # critical urgency is to make sure that the popup does not disappear
-            notify-send -w -i accessories-dictionary-symbolic -u critical "Answer" "$word"                 # if `accessories-dictionaries-symbolic` is not found, remove this option
-        else
-            notify-send -w -i accessories-dictionary-symbolic -u critical "$word" "$translation"
-        fi
+        notify-send -w -i accessories-dictionary-symbolic -u critical "How do you say" "$translation"  # critical urgency is to make sure that the popup does not disappear
+        notify-send -w -i accessories-dictionary-symbolic -u critical "Answer" "$word" # if `accessories-dictionaries-symbolic` is not found, remove this option
 
-        sleep $interval
-    done < <(shuf --random-source="/dev/urandom" $1)
+        sleep "$interval"
+    done < <(shuf --random-source="/dev/urandom" "$file")
 done

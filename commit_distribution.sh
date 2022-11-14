@@ -1,31 +1,41 @@
 #!/bin/bash
 # Gets the distribution of commits based on the hour of the day
+# By default, the output is sorted by the hour of the day (chronologically)
+# If the option --sorted is specified, the output is sorted by the number of commits
 
-# Check if the script is running inside a git repository
-git st 2&> /dev/null
-exit_code=$?
 
-if [ $exit_code -ne 0 ]; then
-    echo Not a git repository
-    exit $exit_code
+set -euo pipefail
+IFS=$'\n\t'
+
+umask 077
+
+
+# Check if the script is run in a git repository
+git status &> /dev/null || { echo "not a git repository" >&2 ; exit 2; }
+
+
+# Check if an invalid option is provided
+option=${1:-}
+if [ -n "$option" ] && [ "$option" != "--sorted" ]; then
+    echo "unknown option: $1" >&2
+    echo "usage: $0 [--sorted]" >&2
+    exit 1
 fi
 
+
 # Get the distribution of commits based on the hour of the day
-echo -n 'Showing the commit distribution (#commits,hour of the day) in a '
 
 # The result has to be sorted based on the number of commits
-if [ "$1" = '--sorted' ]; then
-    echo 'sorted order:'
-
+if [ -n "$option" ]; then
     git log --date=format:'%H' --pretty=format:'%ad' |
         sort |
         uniq -c |
-        sort -nrk 1
+        sort -nrk 1 |
+        awk '{ print $2, $1 }'
 # The result must not be sorted based on the number of commits
 else
-    echo 'non-sorted order:'
-
     git log --date=format:'%H' --pretty=format:'%ad' |
         sort |
-        uniq -c
+        uniq -c |
+        awk '{ print $2, $1 }'
 fi

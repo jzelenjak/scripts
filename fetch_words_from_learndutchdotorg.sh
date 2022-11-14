@@ -3,26 +3,41 @@
 # NB! Cookie is needed for paid courses. It can be specified with `--cookie <cookie_value>` option (cookie value must be one string. You can store it as a shell variable)
 # Although this is a pretty rudimentary script, it does perform the task that i want
 
+
+set -euo pipefail
+IFS=$'\n\t'
+umask 077
+
+usage="usage: $0 url out_file [--cookie <cookie>]"
+
+
 # Check if the URL has been specified
-if [ -z $1 ] ; then
-    echo "$0: URL not specified"
-    exit 2
-fi
+url=${1:-}
+[ -z "$url" ] && { echo -e "missing url\n$usage" >&2; exit 2; }
 
 # Check if the output file name has been specified
-if [ -z $2 ] ; then
-    echo "$0: output file name not specified"
-    exit 2
-fi
+out_file_arg=${2:-}
+[ -z "$out_file_arg" ] && { echo -e "missing output file\n$usage" >&2; exit 2; }
+out_file="$(basename $out_file_arg .csv).csv"
+
+trap "rm $out_file 2> /dev/null" ERR
 
 # Check if a cookie has been specified
-if [ "$3" == "--cookie" ] && [ "$4" != "" ]; then
-    cookie="cookie: $4"
-    cookie_header_flag="-H "
+cookie=""
+cookie_header_flag=""
+cookie_arg=${3:-}
+if [ -n "$cookie_arg" ]; then
+    [ "$cookie_arg" != "--cookie" ] && { echo -e "unknown option: $cookie_arg\n$usage" >&2; exit 2; }
+
+    cookie=${4:-}
+    [ -z "$cookie" ] && { echo -e "missing option argument for option --cookie\n$usage" >&2; exit 2; }
+
+    cookie="cookie: $cookie"
+    cookie_header_flag="-H"
 fi
 
 # Get the words and convert them into the correct format
-curl -sL $cookie_header_flag "$cookie" $1 |
+curl -sL "$cookie_header_flag" "$cookie" "$url" |
     sed -n '/<table .*>/,/<\/table>/p' |         # Get the table with the words
     grep "^<td.*" |                              # Get the words
     sed -ne '
@@ -43,5 +58,5 @@ curl -sL $cookie_header_flag "$cookie" $1 |
             s/&amp;/\&/g
         }
         p
-    ' > $2.csv
+    ' > $out_file
 
