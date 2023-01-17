@@ -15,6 +15,7 @@ interval=${1:-20}
 
 echo "I will remind you to take an eye break every $interval minute(s)"
 
+interval=$(( interval * 60 ))
 while :; do
     sleep "$interval"
     notify-send -w -i preferences-system-privacy-symbolic -u critical "Please take an eye break" "Your eyes are not perfect" # critical urgency is to make sure that the popup does not disappear
