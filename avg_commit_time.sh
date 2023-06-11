@@ -23,7 +23,6 @@ git log --date=format:'%H %M %S' --pretty=format:%ad |
         hours = int(avg_time_seconds / 3600)
         minutes = int(avg_time_seconds % 3600 / 60)
         print "Total commits found:", total
-        print "The average time of a commit is " hours ":" minutes
-    }
-    '
+        printf("The average time of a commit is %02d:%02d\n", hours, minutes)
+    }'
 
